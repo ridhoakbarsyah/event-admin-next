@@ -1,0 +1,310 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int             @id @default(autoincrement()) @map(name: "id")
+  name            String          @map(name: "name")
+  email           String          @unique @map(name: "email")
+  emailVerifiedAt DateTime?       @map(name: "email_verified_at")
+  password        String?         @map(name: "password")
+  role            Role            @default(Participant) @map(name: "role")
+  isCompleted     Boolean?        @map(name: "is_completed")
+  rememberToken   String?         @map(name: "remember_token")
+  createdAt       DateTime        @default(now()) @map(name: "created_at")
+  updatedAt       DateTime        @updatedAt @map(name: "updated_at")
+  UserDetail      UserDetail[]
+  UserQuisioner   UserQuisioner[]
+  UserAddress     UserAddress[]
+  UserCommunity   UserCommunity[]
+  Register        Register[]
+
+  @@map("users")
+}
+
+enum Role {
+  Superadmin    @map(name: "Superadmin")
+  Admin         @map(name: "Admin")
+  Participant   @map(name: "Participant")
+  AdminExternal @map(name: "Admin External")
+  Counter       @map(name: "Counter")
+}
+
+model PasswordReset {
+  email     String   @id @map(name: "email")
+  token     String
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@map("password_resets")
+}
+
+model PasswordResetToken {
+  email     String   @id @map(name: "email")
+  token     String
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@map("password_reset_tokens")
+}
+
+model UserDetail {
+  id                  Int                 @id @default(autoincrement()) @map(name: "id")
+  userId              Int                 @map(name: "user_id")
+  user                User                @relation(fields: [userId], references: [id])
+  nik                 String?             @map(name: "nik") @db.VarChar(16)
+  participantCategory ParticipantCategory @map(name: "participant_category")
+  phoneNumber         String              @map(name: "phone_number") @db.VarChar(15)
+  gender              Gender              @map(name: "gender")
+  birthPlace          String              @map(name: "birth_place") @db.VarChar(50)
+  birthDate           DateTime            @map(name: "birth_date")
+  bloodGroup          String              @map(name: "blood_group") @db.VarChar(2)
+  illnessHistory      String?             @map(name: "illness_history")
+  jerseySize          JerseySize?         @map("jersey_size")
+  avatar              String?             @map(name: "avatar")
+  createdAt           DateTime            @default(now()) @map(name: "created_at")
+  updatedAt           DateTime            @updatedAt @map(name: "updated_at")
+
+  @@map("user_details")
+}
+
+enum ParticipantCategory {
+  Umum
+  Pelajar
+}
+
+enum Gender {
+  LakiLaki  @map(name: "Laki-laki")
+  Perempuan @map(name: "Perempuan")
+}
+
+enum JerseySize {
+  S
+  M
+  L
+  XL
+  XXL
+}
+
+model Province {
+  id        Int      @id @default(autoincrement()) @map(name: "id")
+  code      String   @unique @map(name: "code")
+  name      String   @map(name: "name")
+  meta      String?  @map(name: "meta") @db.Text
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+  cities    City[]
+
+  @@map("indonesia_provinces")
+}
+
+model City {
+  id           Int      @id @default(autoincrement()) @map(name: "id")
+  code         String   @unique @map(name: "code")
+  provinceCode String   @map(name: "province_code")
+  name         String   @map(name: "name")
+  meta         String?  @map(name: "meta") @db.Text
+  createdAt    DateTime @default(now()) @map(name: "created_at")
+  updatedAt    DateTime @updatedAt @map(name: "updated_at")
+
+  // Define the foreign key relationship
+  province  Province   @relation(fields: [provinceCode], references: [code])
+  districts District[]
+
+  @@map("indonesia_cities")
+}
+
+model District {
+  id        Int      @id @default(autoincrement()) @map(name: "id")
+  code      String   @unique @map(name: "code")
+  cityCode  String   @map(name: "city_code")
+  name      String   @map(name: "name")
+  meta      String?  @map(name: "meta") @db.Text
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  // Define the foreign key relationship
+  city     City      @relation(fields: [cityCode], references: [code])
+  villages Village[]
+
+  @@map("indonesia_districts")
+}
+
+model Village {
+  id           Int      @id @default(autoincrement()) @map(name: "id")
+  code         String   @unique @map(name: "code")
+  districtCode String   @map(name: "district_code")
+  name         String   @map(name: "name")
+  meta         String?  @map(name: "meta") @db.Text
+  createdAt    DateTime @default(now()) @map(name: "created_at")
+  updatedAt    DateTime @updatedAt @map(name: "updated_at")
+
+  // Define the foreign key relationship
+  district District @relation(fields: [districtCode], references: [code])
+
+  @@map("indonesia_villages")
+}
+
+model UserQuisioner {
+  id        Int      @id @default(autoincrement()) @map(name: "id")
+  userId    Int      @map(name: "user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  type      Type     @map(name: "type")
+  answer    String   @map(name: "answer")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("user_quisioners")
+}
+
+enum Type {
+  reference
+}
+
+model UserAddress {
+  id           Int      @id @default(autoincrement()) @map(name: "id")
+  userId       Int      @map(name: "user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  provinceCode String   @map(name: "province_code") @db.Char(2)
+  cityCode     String   @map(name: "city_code") @db.Char(4)
+  districtCode String   @map(name: "district_code") @db.Char(7)
+  villageCode  String   @map(name: "village_code") @db.Char(10)
+  address      String   @map(name: "address") @db.Text
+  createdAt    DateTime @default(now()) @map(name: "created_at")
+  updatedAt    DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("user_addresses")
+}
+
+model UserCommunity {
+  id        Int      @id @default(autoincrement()) @map(name: "id")
+  userId    Int      @map(name: "user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  name      String   @map(name: "name")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("user_communities")
+}
+
+model Event {
+  id                Int        @id @default(autoincrement()) @map(name: "id")
+  name              String     @map(name: "name") @db.VarChar(100)
+  registrationStart DateTime   @map(name: "registration_start")
+  registrationEnd   DateTime   @map(name: "registration_end")
+  eventDate         DateTime   @map(name: "event_date")
+  status            Boolean    @map(name: "status")
+  createdAt         DateTime   @default(now()) @map(name: "created_at")
+  updatedAt         DateTime   @updatedAt @map(name: "updated_at")
+  Category          Category[]
+
+  @@map("events")
+}
+
+model Category {
+  id            Int          @id @default(autoincrement()) @map(name: "id")
+  eventId       Int          @map(name: "event_id")
+  event         Event        @relation(fields: [eventId], references: [id])
+  name          String       @map(name: "name") @db.VarChar(100)
+  description   String       @map(name: "description") @db.Text
+  descriptionEn String       @map(name: "description_en") @db.Text
+  price         Int          @map(name: "price")
+  bibCodePutra  String       @map(name: "bib_code_putra") @db.VarChar(10)
+  bibCodePutri  String       @map(name: "bib_code_putri") @db.VarChar(10)
+  status        Boolean      @map(name: "status")
+  category      CategoryType @map(name: "category")
+  createdAt     DateTime     @default(now()) @map(name: "created_at")
+  updatedAt     DateTime     @updatedAt @map(name: "updated_at")
+  Register      Register[]
+
+  @@map("categories")
+}
+
+enum CategoryType {
+  Umum
+  Pelajar
+}
+
+model Register {
+  id           Int          @id @default(autoincrement()) @map(name: "id")
+  userId       Int          @map(name: "user_id")
+  user         User         @relation(fields: [userId], references: [id])
+  categoryId   Int          @map(name: "category_id")
+  category     Category     @relation(fields: [categoryId], references: [id])
+  status       Int          @default(0) @map(name: "status")
+  bib          String?      @map(name: "bib") @db.VarChar(10)
+  getRacepack  Boolean      @default(false) @map(name: "get_racepack")
+  getJersey    Boolean      @default(false) @map(name: "get_jersey")
+  registerType RegisterType @default(Online) @map(name: "register_type")
+  createdAt    DateTime     @default(now()) @map(name: "created_at")
+  updatedAt    DateTime     @updatedAt @map(name: "updated_at")
+  Invoice      Invoice[]
+
+  @@map("registers")
+}
+
+enum RegisterType {
+  Online
+  Offline
+}
+
+model Invoice {
+  id               Int       @id @default(autoincrement()) @map(name: "id")
+  registerId       Int       @map(name: "register_id")
+  register         Register  @relation(fields: [registerId], references: [id])
+  invoiceXenditUrl String    @map(name: "invoice_xendit_url")
+  invoiceXenditId  String    @map(name: "invoice_xendit_id")
+  invoiceEventId   String    @map(name: "invoice_event_id")
+  title            String    @map(name: "title")
+  amount           String    @map(name: "amount")
+  status           Int       @default(0)
+  expiredAt        DateTime? @map(name: "expired_at")
+  createdAt        DateTime  @default(now()) @map(name: "created_at")
+  updatedAt        DateTime  @updatedAt @map(name: "updated_at")
+
+  @@map("invoices")
+}
+
+model Setting {
+  id               Int      @id @default(autoincrement()) @map(name: "id")
+  webName          String   @map(name: "web_name") @db.VarChar(100)
+  webSlogan        String   @map(name: "web_slogan") @db.VarChar(100)
+  webDescription   String   @map(name: "web_description") @db.Text
+  webDescriptionEn String   @map(name: "web_description_en") @db.Text
+  webKeyword       String   @map(name: "web_keyword") @db.Text
+  webLogo          String   @map(name: "web_logo")
+  canRegister      Boolean  @map(name: "can_register")
+  canLogin         Boolean  @map(name: "can_login")
+  adminContact     String   @map(name: "admin_contact") @db.VarChar(15)
+  gtmId            String?  @map(name: "gtm_id") @db.VarChar(50)
+  metaPixelId      String?  @map(name: "meta_pixel_id") @db.VarChar(50)
+  createdAt        DateTime @default(now()) @map(name: "created_at")
+  updatedAt        DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("settings")
+}
+
+model Sponsor {
+  id        Int      @id @default(autoincrement()) @map(name: "id")
+  name      String   @map(name: "name") @db.VarChar(100)
+  logo      String   @map(name: "logo")
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("sponsors")
+}
+
+model Faq {
+  id         Int      @id @default(autoincrement()) @map(name: "id")
+  question   String   @map(name: "question")
+  questionEn String   @map(name: "question_en")
+  answer     String   @map(name: "answer")
+  answerEn   String   @map(name: "answer_en")
+  createdAt  DateTime @default(now()) @map(name: "created_at")
+  updatedAt  DateTime @updatedAt @map(name: "updated_at")
+
+  @@map("faqs")
+}
